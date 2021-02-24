@@ -1,0 +1,249 @@
+{% load static %}
+<html>
+<head>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  <title>Chartgif</title>
+</head>
+<body>
+  <div class="row">
+    <div class="col-md-2">
+      <div style="border-bottom: 1px solid #ccc;">
+        Chartgif <br/>
+        World Life Expectancy vs Income
+      </div>
+      <form action="/slice">
+        <div style="padding-top: 30px;">
+          (1) Generate embedding<br>
+          <div style="padding-left: 20px;">
+            <input class="emb" type="checkbox" id="chbox_x" name="X" value="income" {% if "X" in selectedAxis %} checked {% endif %}> Income (X)<br>
+            <input class="emb" type="checkbox" id="chbox_y" name="Y" value="lifexp" {% if "Y" in selectedAxis %} checked {% endif %}> Life Expectancy (Y)<br>
+            <input class="emb" type="checkbox" id="chbox_s" name="S" value="popula" {% if "S" in selectedAxis %} checked {% endif %}> Population (S)<br>
+            <input class="emb" type="checkbox" id="chbox_d" name="D" value="distance" disabled> Distance (D)<br>
+          </div>
+        </div>
+        <div>
+          V = <br>
+          <div style="padding-left: 20px; font-family: Times;">
+            <table>
+              <tr>
+                <td style="text-align:right; font-size: 40px">[</td>
+                <td style="text-align:center">
+                  <div id="embvector">
+                  </div>
+                </td>
+                <td style="text-align:left; font-size: 40px">]</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div style="padding-top: 30px;">
+          (2) Generate time slices<br>
+          <div style="padding-left: 20px;">
+            The number of years in a time window: <input type="number" name="W" min="1" max="{{ numYears }}" {% if clusterinfo.W %} value={{clusterinfo.W}} {% else %} value="20" {% endif %}>
+          </div>
+        </div>
+        <div style="padding-top: 30px;">
+          <input class="btn btn-primary" style="width:100%" type="submit" value="Colour clusters" />
+        </div>
+      </form>
+      <div>
+        <div class="custom-control custom-switch">
+          <input type="checkbox" class="custom-control-input" id="switchPlay">
+          <label class="custom-control-label" for="switchPlay">Play</label>
+        </div>
+        <div class="custom-control custom-switch">
+          <input type="checkbox" class="custom-control-input" id="switchHull">
+          <label class="custom-control-label" for="switchHull">Draw hull</label>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-8">
+      <div id="myChart"></div>
+      <input type="range" class="slider" name="mySlider" id=mySlider min="1800" max="2018" value="1800"></input>
+      <output for="foo" onforminput="value = foo.valueAsNumber;"></output>
+      <div>
+        {% for y, values in printgrp.items %}
+          <span style="background-color:yellow">{{ y }} </span><br/>
+          {% for g, ctr in values.items %}
+            Group: {{ g }} {{ ctr }}
+            <br/>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+    <div class="col-md-2">
+      Cluster information
+      <div id="clusterinfo" class="row"></div>
+    </div>
+</body>
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://d3js.org/d3-contour.v1.min.js"></script>
+<script src="{% static 'js/scatter_slice.js' %}"></script>
+<script src="{% static 'js/trace.js' %}"></script>
+<script>
+var gcolor = d3.scaleOrdinal(d3.schemeCategory20);
+
+var data_plot = {{data|safe}};
+var data_population = {{population|safe}};
+var data_continent = {{continent|safe}};
+var data_group = {{kgroup|safe}};
+var cluster_info = {{clusterinfo|safe}};
+var detail_flag = "{{detail_on}}";
+
+var chart = new ScatterPlotSlice("myChart");
+chart.initChart(data_plot, data_population, data_continent, data_group);
+
+var el, newPoint;
+var infodiv = document.getElementById("clusterinfo");
+function kFormatter(num) {
+    if (Math.abs(num) > 999999)
+      return Math.sign(num)*((Math.abs(num)/1000000).toFixed(1)) + 'M'
+    if (Math.abs(num) > 999)
+      return Math.sign(num)*((Math.abs(num)/1000).toFixed(1)) + 'K'
+    return Math.sign(num)*Math.abs(num)
+}
+function initClusterinfo(year) {
+  infodiv.innerHTML = "";
+  var div_year = document.createElement("div");
+  div_year.innerHTML="Year = <span id='infoCurYear'>" + curYear + "</span><br>";
+  div_year.classList.add("col-md-12");
+  infodiv.appendChild(div_year);
+
+  var numGroup = cluster_info["K"][year];
+  var minmax = cluster_info["minmax"][year];
+  for (var g = 0; g < numGroup; g++) {
+    var div_group = document.createElement("div");
+    div_group.style = "padding: 10px";
+    div_group.classList.add("col-md-6");
+    div_group.innerHTML += "<span class='badge' style='width:100%;background-color:"+gcolor(g)+"'>Group " + g + "</span><br>";
+    div_group.innerHTML += "<div style='padding-left:10px'><span id='infoMinMax_"+g+"'></span></div>"
+    div_group.innerHTML += "<div id='trace_chart_" + g + "'></div>"
+
+    if (detail_flag == "True") {
+      var div_group_detail = document.createElement("div");
+      div_group_detail.style = "font-size: 8px";
+      for (var c in data_group) {
+        if (data_group[c]["group"] == g) {
+          console.log(c, data_group[c])
+          div_group_detail.innerHTML += c + "<br/>";
+        }
+      }
+      div_group.appendChild(div_group_detail);
+    }
+    infodiv.appendChild(div_group);
+  }
+  // drawTraceCharts(numGroup);
+}
+function updateClusterinfo(year) {
+  if (cluster_info.length == 0) return;
+
+  var info_year = document.getElementById("infoCurYear");
+  info_year.innerHTML = year;
+
+  var numGroup = cluster_info["K"][year];
+  var minmax = cluster_info["minmax"][year];
+  for (var g = 0; g < numGroup; g++) {
+    var info_minmax = document.getElementById("infoMinMax_"+g);
+    info_minmax.innerHTML = "";
+    for (var a in minmax[g]) {
+      info_minmax.innerHTML += a + ": " + kFormatter(minmax[g][a]["min"]) + "~" + kFormatter(minmax[g][a]["max"]) + "<br>";
+    }
+  }
+}
+function drawTraceCharts(numGroup) {
+  var trace_chart = {};
+  for (var g = 0; g < numGroup; g++) {
+    trace_chart[g] = new TraceChart("trace_chart_", g);
+    trace_chart[g].draw(data_plot, data_population, data_continent, data_group);
+  }
+}
+
+var selections = {};
+var embchboxes = document.querySelectorAll("input.emb");
+var embvector = document.getElementById("embvector");
+for (var i = 0; i < embchboxes.length; i++) {
+  selections[embchboxes[i].id] = embchboxes[i].checked
+  embchboxes[i].addEventListener("click", chboxOnChange);
+}
+function chboxOnChange(e) {
+  if (e.target.checked) {
+    selections[e.target.id] = true;
+  } else {
+    selections[e.target.id] = false;
+  }
+  changeEmbedding();
+}
+function changeEmbedding() {
+  console.log(selections);
+  embvector.innerHTML = "";
+  if (selections["chbox_x"]) embvector.innerHTML += "x_0, x_1, x_2 ... , x_n <br>";
+  if (selections["chbox_y"]) embvector.innerHTML += "y_0, y_1, y_2 ... , y_n <br>";
+  if (selections["chbox_s"]) embvector.innerHTML += "s_0, s_1, s_2 ... , s_n <br>";
+
+}
+changeEmbedding();
+
+var curYear = 1800;
+var maxYear = 2018;
+var timer = undefined;
+var flagConvexHulls = false;
+var playon = document.querySelectorAll("input#switchPlay");
+playon[0].addEventListener("change", function(e) {
+  // console.log("playon", e.target.checked, curYear);
+  if (e.target.checked && curYear < maxYear) {
+    timer = setInterval(function() {
+      curYear += 1;
+      // console.log("update", curYear);
+      if (curYear >= maxYear) {
+        clearInterval(timer);
+      }
+      changeSlider($("input[type='range']"), curYear, true);
+    }, 100);
+  } else {
+    if (timer) clearInterval(timer);
+  }
+});
+var hullon = document.querySelectorAll("input#switchHull");
+hullon[0].addEventListener("change", function(e) {
+  console.log("hullon", e.target.checked);
+  flagConvexHulls = e.target.checked;
+  chart.updateChart(curYear, flagConvexHulls);
+});
+
+
+$('input[type=range]').on('input', function () {
+  $(this).trigger('change');
+});
+$("input[type='range']").change(function() {
+  el = $(this);
+  curYear  = parseInt(el.val());
+  changeSlider(el, curYear, false);
+})
+// Fake a change to position bubble at page load
+.trigger('change');
+
+function changeSlider(el, curYear, play) {
+  width = el.width()-50;
+  newPoint = (curYear - el.attr("min")) / (el.attr("max") - el.attr("min"));
+  // console.log(newPoint, el.val())
+  el.next("output")
+    .css({
+     marginLeft: 10 + width * newPoint,
+    })
+    .text(curYear);
+  if (play) {
+    el.val(curYear);
+  }
+  chart.updateChart(curYear, flagConvexHulls);
+  initClusterinfo(curYear);
+  updateClusterinfo(curYear);
+}
+</script>
+</html>

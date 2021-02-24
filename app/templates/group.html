@@ -1,0 +1,718 @@
+{% load static %}
+<html>
+<head>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  <title>Chartgif</title>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">Roslingifier</a>
+    <button class="btn btn-sm btn-outline-secondary btn-menu" id="btn-save" type="submit">Save Session</button>
+    <button class="btn btn-sm btn-outline-secondary btn-menu" id="btn-reset" type="submit">Reset</button>
+  </nav>
+  <div class="content">
+    <div class="row">
+      <div id="dropdown_Y_scale" class="dropdown">
+        <button class="btn btn-sm btn-info dropdown-toggle rotate" type="button" id="dropdownMenuButton_yScale" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          {{ options.yScale.name }}
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton_yScale">
+          <a class="dropdown-item" name="yScale" id="lin" href="#">Lin</a>
+          <a class="dropdown-item" name="yScale" id="log" href="#">Log</a>
+        </div>
+      </div>
+      <div id="dropdown_Y" class="dropdown">
+        <button class="btn btn-sm btn-outline-dark dropdown-toggle rotate" type="button" id="dropdownMenuButton_y" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          {{ options.y.name }}
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton_Y">
+          <a class="dropdown-item" name="y" id="income" href="#">Income</a>
+          <a class="dropdown-item" name="y" id="lifespan" href="#">Life Expectancy</a>
+          <a class="dropdown-item" name="y" id="fertility" href="#">Babies per woman</a>
+          <a class="dropdown-item" name="y" id="mortality" href="#">Child mortality</a>
+        </div>
+      </div>
+      <div class="col-md-6" style="padding: 0 0 0 60px;">
+        <div class="chart-background"></div>
+        <div id="myChart"></div>
+        <div align="center">
+          <div id="dropdown_X" class="dropdown">
+            <button class="btn btn-sm btn-outline-dark dropdown-toggle" type="button" id="dropdownMenuButton_x" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              {{ options.x.name }}
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton_X">
+              <a class="dropdown-item" name="x" id="income" href="#">Income</a>
+              <a class="dropdown-item" name="x" id="lifespan" href="#">Life Expectancy</a>
+              <a class="dropdown-item" name="x" id="fertility" href="#">Babies per woman</a>
+              <a class="dropdown-item" name="x" id="mortality" href="#">Child mortality</a>
+            </div>
+          </div>
+          <div id="dropdown_X_scale" class="dropdown">
+            <button class="btn btn-sm btn-info dropdown-toggle" type="button" id="dropdownMenuButton_xScale" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              {{ options.xScale.name }}
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton_xScale">
+              <a class="dropdown-item" name="xScale" id="lin" href="#">Lin</a>
+              <a class="dropdown-item" name="xScale" id="log" href="#">Log</a>
+            </div>
+          </div>
+        </div>
+        <div class="chart-title">
+          <span id='infoChartTitle'></span>
+        </div>
+        <div class="year-background">
+          <span id='infoCurYear'></span>
+        </div>
+        <textarea id="caption-panel">
+        </textarea>
+      </div>
+      <div class="col-md-6" style="padding:0 25px 0 40px">
+        <div class="event_types">
+          Event type:
+          <div class="event_type">
+            <img src="{% static 'images/icon_increased.png' %}" /> <b>R</b>ise
+          </div>
+          <div class="event_type">
+            <img src="{% static 'images/icon_decreased.png' %}" /> <b>D</b>rop
+          </div>
+          <div class="event_type">
+            <img src="{% static 'images/icon_downup.png' %}" /> <b>T</b>rough
+          </div>
+          <div class="event_type">
+            <img src="{% static 'images/icon_updown.png' %}" /> <b>P</b>eak
+          </div>
+          <div class="event_type">
+            <img src="{% static 'images/icon_nochange.png' %}" /> <b>Pl</b>a<b>t</b>eau
+          </div>
+          <div class="event_type">
+            <img src="{% static 'images/icon_mostspread.png' %}" /> <b>S</b>pread
+          </div>
+          <div class="event_type">
+            <img src="{% static 'images/icon_usr.png' %}" /> <b>U</b>ser
+          </div>
+        </div>
+        <div id="clusterinfo" class="row"></div>
+      </div>
+    </div>
+    <div class="row" id="timeline-panel" style="padding: 20px 0px;">
+      <button id="switchPlay" type="button" class="btn btn-primary custom-switch-play" data-toggle="button" aria-pressed="false" autocomplete="off">
+        <i id="play_icon" class="fa fa-play"></i>
+      </button>
+      <!-- <div class="custom-control custom-switch-play" id="switchPlay">
+        <label>
+          <input type="checkbox" class="custom-control-input">
+        <i id="play_icon" class="fa fa-play"></i></label>
+      </div> -->
+      <div class="col-md-12" style="padding:0">
+        <div style="height:290;overflow-x:hidden;">
+          <div class="timeline timeline-cover" style="left:0; width:30px"></div>
+          <div class="timeline timeline-cover" style="right:0; width:25px"></div>
+          <div class="timeline timeline-background" id="timeline-background"></div>
+          <div class="timeline timeline-frame" id="timeline"></div>
+          <div class="timeline timeline-label" id="timeline-label"></div>
+          <div class="timeline timeline-legend" id="timeline-legend"></div>
+          <div class="timeline timeline-control" id="timeline-control"></div>
+          <div class="timeline timeline-slider">
+            <input type="range" class="slider" name="mySlider" id=mySlider min="0" max="0" value="0"></input>
+            <output for="foo" onforminput="value = foo.valueAsNumber;"></output>
+          </div>
+          <div class="timeline timeline-slider-extend" id="slider-extend"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <nav class="context-menu">
+    <ul class="context-menu__items">
+      <li class="context-menu__item context-menu__moveleft context-menu__border">
+        <i class="fa fa-chevron-left"></i> Move Left
+      </li>
+      <li class="context-menu__item context-menu__moveright context-menu__border">
+        <i class="fa fa-chevron-right"></i> Move Right
+      </li>
+      <li class="context-menu__item context-menu__delete">
+        <i class="fa fa-times"></i> Delete
+      </li>
+    </ul>
+  </nav>
+  <nav class="context-menu-label">
+    <ul class="context-menu-label__items">
+      <li class="context-menu-label__item context-menu-label__delete">
+        <i class="fa fa-times"></i> Delete
+      </li>
+    </ul>
+  </nav>
+</body>
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://d3js.org/d3-contour.v1.min.js"></script>
+<script src="{% static 'js/scatter.js' %}"></script>
+<script src="{% static 'js/trace.js' %}"></script>
+<script src="{% static 'js/line.js' %}"></script>
+<script src="{% static 'js/timeframes.js' %}"></script>
+<script src="{% static 'js/timeline.js' %}"></script>
+<script src="{% static 'js/contextmenu.js' %}"></script>
+<script>
+var morecolor = d3.scaleOrdinal(d3.schemeCategory10);
+var colorarray = ["#666", "#F08391", "#FFCF2B", "#AEED6C", "#80DBEB"];
+let gcolor = function(i){
+  if (i < colorarray.length) {
+    return colorarray[i];
+  } else {
+    return morecolor(i-colorarray.length);
+  }
+};
+
+var timeseries = {{timeseries|safe}};
+var data_plot = {{data|safe}};
+var data_options = {{options|safe}};
+var data_population = {{population|safe}};
+var data_continent = {{continent|safe}};
+var data_group = {{kgroup|safe}};
+var cluster_info = {{clusterinfo|safe}};
+var data_avg_velocity = {{avg_velocity|safe}};
+var data_focus_range = {{focus_range|safe}};
+var o_trend = ("{{ otrend }}" == "True");
+var gname = {{gname|safe}};
+var legendCount = Object.keys(gname).length;
+
+var selectedAxis = ["X", "Y", "S"];
+var params = {
+  "x": "confirmed",
+  "xScale": "log",
+  "y": "death",
+  "yScale": "log",
+  "s": "population"
+}
+var timeunit = 200;
+var w = document.getElementById("myChart").offsetWidth,
+    h = window.innerHeight-400;
+var leftTimelineMargin = 100;
+var timeline_w = document.getElementById("timeline-panel").offsetWidth;
+var label_w = Math.min(200, Math.max(120, w*0.2));
+var left_offset = 66, desc_h = 35, caption_h = 65, timeline_w_margin = 50;
+var chart = new ScatterPlot("myChart", w, h-caption_h+desc_h);
+for (var k in data_options) {
+  params[k] = data_options[k].id;
+}
+document.getElementsByClassName("chart-background")[0].style.width = w;
+document.getElementsByClassName("chart-background")[0].style.height = h-caption_h+desc_h;
+document.getElementById("dropdown_Y").style.marginTop = w/2-100;
+document.getElementById("dropdown_Y_scale").style.marginTop = w/2-210;
+document.getElementsByClassName("timeline-background")[0].style.width = timeline_w-timeline_w_margin;
+document.getElementsByClassName("timeline-label")[0].style.width = timeline_w-timeline_w_margin;
+document.getElementsByClassName("timeline-frame")[0].style.width = timeline_w-timeline_w_margin;
+document.getElementsByClassName("timeline-slider")[0].style.width = timeline_w-timeline_w_margin;
+chart.initChart(data_plot, data_options, data_population, data_continent, data_group);
+
+$(".dropdown-menu a").click(function () {
+  var setItem = $(this);
+  console.log("dropdown select", setItem[0].name, setItem[0].id, setItem.text())
+  $("#dropdownMenuButton_"+setItem[0].name).text(setItem.text());
+  params[setItem[0].name] = setItem[0].id;
+  window.location.href = "?"+$.param( params );
+});
+
+var curFrame = 0, preFrame = -1;
+var play_timer = undefined;
+var el, newPoint, timebar;
+var linecharts_v = {};
+var trace_chart = {};
+var infodiv = document.getElementById("clusterinfo");
+infodiv.style.height = h+40;
+initClusterinfo();
+
+var timeline_w = document.getElementById("timeline-background").offsetWidth;
+var testtimeframes = new TimeFrames(timeseries, gname);
+var timeline = new TimeLine("timeline", timeline_w);
+testtimeframes.addFrames(data_focus_range);
+testtimeframes.calculateTimeFrames();
+timeline.initChart();
+if (sessionStorage.storySaved == "true" && performance.navigation.type == performance.navigation.TYPE_RELOAD) {
+  console.log("[*] Load saved data");
+  loadSavedSession();
+} else {
+  refresh();
+}
+
+function addEventinLinechart(yrange, group, axes, reason, pattern) {
+  // console.log("pattern", pattern)
+  var newname = {
+    "nochange": "Plt",
+    "increased": "R",
+    "decreased": "D",
+    "downup": "T",
+    "updown": "P",
+    "mostspread": "S",
+    "usr": "U"
+  }
+  draw_rect_input(yrange, "lines_"+group, axes, newname[pattern]);
+  draw_rect_trace(yrange, group, newname[pattern])
+  // draw_rect_input(yrange, "lines_"+group, axes, pattern);
+  // draw_rect_trace(yrange, group, pattern);
+}
+
+function drawFrame(yrange, group, axes, reason, pattern) {
+  testtimeframes.addFrame(yrange, group, axes, reason, pattern);
+  testtimeframes.calculateTimeFrames();
+  timeline.updateChart(testtimeframes.getTimeFrames(), testtimeframes.getFrameOrder(), testtimeframes.getFrameMap());
+  updateSlider();
+}
+
+function expandChart(flag_expand) {
+  // console.log("expandChart", curFrame, timeline.s_height, timeline.l_height);
+  if (flag_expand) newheight = timeline.l_height;
+  else newheight = timeline.s_height;
+  document.getElementsByClassName("timeline-background")[0].style.height = newheight;
+  document.getElementsByClassName("timeline-slider-extend")[0].style.height = newheight;
+  refresh();
+}
+
+function refresh(resetZoom=false) {
+  timeline.updateChart(testtimeframes.getTimeFrames(), testtimeframes.getFrameOrder(), testtimeframes.getFrameMap(), resetZoom);
+  updateSlider();
+}
+
+var swapArrayElements = function(arr, indexA, indexB) {
+  var temp = arr[indexA];
+  arr[indexA] = arr[indexB];
+  arr[indexB] = temp;
+};
+function moveFrameOrder(id, direction) {
+  var obound = testtimeframes.framemap[id].outerbound;
+  var reason_order = testtimeframes.outerbound[obound].order;
+  // console.log("moveFrameOrder", id, reason_order, reason_order.indexOf(id));
+  var pos = reason_order.indexOf(id);
+  if (direction == "left") swapArrayElements(reason_order, pos, pos-1)
+  if (direction == "right") swapArrayElements(reason_order, pos, pos+1)
+  testtimeframes.outerbound[obound].order = reason_order;
+  testtimeframes.calculateTimeFrames();
+}
+
+function findNextFrame(id, direction) {
+  var obound = testtimeframes.framemap[id].outerbound;
+  var reason_order = testtimeframes.outerbound[obound].order;
+  var pos = reason_order.indexOf(id);
+  if (direction == "left") return reason_order[pos-1];
+  if (direction == "right") return reason_order[pos+1];
+}
+
+function kFormatter(num) {
+    if (Math.abs(num) > 999999)
+      return Math.sign(num)*((Math.abs(num)/1000000).toFixed(1)) + 'M'
+    if (Math.abs(num) > 999)
+      return Math.sign(num)*((Math.abs(num)/1000).toFixed(1)) + 'K'
+    return Math.sign(num)*Math.abs(num)
+}
+
+function updateLineTimebar(curYear) {
+  // console.log("updateLineTimebar", curYear);
+  if (isNaN(curYear)) curYear = timeseries[0];
+  timebar.style.left = (+line_xscale(curYear)+label_w+left_offset+27) + "px";
+  timebar.style.top = 45 + "px";
+  timebar.style.height = (h+12) + "px";
+}
+
+function initClusterinfo() {
+  var numGroup = cluster_info["K"];
+  var minmax = cluster_info["minmax"];
+  var group_h = h/numGroup;
+  if (group_h < 65) {
+    group_h = 65;
+  }
+  var axis_h = (group_h-20)/3;
+  for (var g = 0; g < numGroup; g++) {
+    var div_group = document.createElement("div");
+    div_group.style = "display:block; padding: 0 20px 0 5px; height: "+group_h+"px;";
+
+    var div_group_label = document.createElement("div");
+    div_group_label.style = "display:inline-block; vertical-align:top; width:"+label_w+"px; height: "+group_h+"px;";
+
+    var div_group_badge = document.createElement("span");
+    div_group_badge.className = "badge";
+    div_group_badge.innerText = gname[g];
+    var div_group_trace = document.createElement("div");
+    div_group_trace.id = "trace_chart_" + g;
+    div_group_trace.className = "group_trace";
+    div_group_label.append(div_group_badge);
+    div_group_label.append(div_group_trace);
+
+    var line_w = w-label_w-10;
+    var div_group_timeline = document.createElement("div");
+    div_group_timeline.style="display:inline-block; position: relative; padding:0; width:"+line_w+"px; height: "+group_h+"px;";
+
+    var div_group_timeline_avg_v = document.createElement("div");
+    div_group_timeline_avg_v.id = "lines_"+g;
+    div_group_timeline_avg_v.style = "width:"+line_w+"px; height: "+group_h+"px; position: absolute; top:10; z-index:0";
+    div_group_timeline.appendChild(div_group_timeline_avg_v);
+
+    for (var a = 0; a < 3; a++) {
+      var div_group_timeline_avg_a = document.createElement("div");
+      div_group_timeline_avg_a.id = div_group_timeline_avg_v.id+"_"+selectedAxis[a];
+      div_group_timeline_avg_a.style = "width:"+(line_w-left_offset)+"px; height: "+axis_h+"px; position: absolute; top:"+(10+axis_h*a)+"; left: "+left_offset+"; z-index:1";
+      div_group_timeline.appendChild(div_group_timeline_avg_a);
+    }
+
+    div_group.appendChild(div_group_label);
+    div_group.appendChild(div_group_timeline);
+    infodiv.appendChild(div_group);
+
+    linecharts_v[g] = new LineChart(div_group_timeline_avg_v.id, line_w, group_h, axis_h);
+    linecharts_v[g].drawChart(data_avg_velocity[g], data_options);
+  }
+  drawTraceCharts(numGroup, group_h-20);
+
+  timebar = document.createElement("div");
+  timebar.className = "line-timebar";
+  infodiv.appendChild(timebar);
+}
+
+function updateChartTitle(gid) {
+  var info_title = document.getElementById("infoChartTitle");
+  var title = "";
+  if (gid == undefined) {
+    // title += ' <i class="fa fa-play" aria-hidden="true"></i>';
+    title = "";
+  } else {
+    var names = gid.split("-");
+    if (names[0] == "init" || names[2] == "b") {
+      title = "";
+    } else if (names[2] == "p") {
+      title += ' <i class="fa fa-play" style="color:#666"></i> ';
+      title += names[0]+"-"+names[1];
+    } else if (names[2] == "e") {
+      title += ' <i class="fa fa-fast-backward" style="color:#666"></i> ';
+      title += names[0]+"-"+names[1];
+    } else {
+      title += ' <i class="fa fa-fast-backward" style="color:'+gcolor(names[2])+'"></i> ';
+      title += names[0]+"-"+names[1] + " ";
+      title += '<span style="color:'+gcolor(names[2])+'">'+gname[names[2]]+'</span>';
+    }
+  }
+  info_title.innerHTML = title;
+}
+function updateBackgoundYear(year) {
+  var info_year = document.getElementById("infoCurYear");
+  info_year.innerHTML = year;
+}
+var caption_panel = document.getElementById("caption-panel");
+caption_panel.addEventListener("change", function(e) {
+  // console.log("caption_panel on change", e)
+  updateCurrentCaption();
+});
+caption_panel.addEventListener("input", function(e) {
+  pause();
+});
+function updateCaptionPanel(text) {
+  caption_panel.value = text==undefined?"":text;
+}
+function updateCurrentCaption() {
+  // console.log("caption_panel.value", curFrame, caption_panel.value);
+  var cid = testtimeframes.timeFrameInfo[curFrame];
+  testtimeframes.saveCaption(cid, caption_panel.value);
+  timeline.updateCaption(cid, caption_panel.value);
+}
+
+function drawTraceCharts(numGroup, height) {
+  for (var g = 0; g < numGroup; g++) {
+    // console.log("drawTraceCharts", g)
+    trace_chart[g] = new TraceChart("trace_chart_", g, height);
+    trace_chart[g].draw(data_plot, data_options, data_population, data_continent, data_group);
+  }
+}
+
+
+function updateSlider() {
+  var slider = document.getElementById("mySlider");
+  var length_timeFrames = testtimeframes.getTimeFrameLength();
+  slider.min = timeScaleInvert(0);
+  slider.max = timeScaleInvert(timeline.width);
+  slider.value = curFrame;
+  // console.log("UpdateSlider", slider.min, slider.max, slider.value)
+  changeSlider();
+}
+
+function removeFrame(id, axes) {
+  // console.log("removeFrame", id)
+  testtimeframes.removeFrame(id);
+  testtimeframes.calculateTimeFrames();
+  timeline.updateChart(testtimeframes.getTimeFrames(), testtimeframes.getFrameOrder(), testtimeframes.getFrameMap());
+  remove_rect_line(id, axes);
+  remove_rect_trace(id);
+  updateSlider();
+}
+
+var btnSave = document.getElementById("btn-save");
+btnSave.addEventListener("click", function(e) {
+  alert("Current session is saved. Does not work when the tab is closed.");
+  saveCurrentSession();
+});
+var btnReset = document.getElementById("btn-reset");
+btnReset.addEventListener("click", function(e) {
+  testtimeframes = new TimeFrames(timeseries, gname);
+  testtimeframes.addFrames(data_focus_range);
+  testtimeframes.calculateTimeFrames();
+  timeline.initChart();
+  refresh();
+});
+
+var playon = document.getElementById("switchPlay");
+playon.addEventListener("click", function(e) {
+  var pressed = playon.getAttribute("aria-pressed") == "true";
+  // console.log("playon", pressed, curFrame);
+  if (pressed) {
+    document.getElementById("play_icon").className = "fa fa-play";
+  } else {
+    document.getElementById("play_icon").className = "fa fa-pause";
+  }
+  testtimeframes.calculateTimeFrames();
+  var length_timeFrames = testtimeframes.getTimeFrameLength();
+  var timeFrames = testtimeframes.getTimeFrames();
+  if (play_timer == undefined && !pressed && curFrame < length_timeFrames) {
+    play_timer = setInterval(function() {
+      curFrame += 1;
+      if (curFrame >= length_timeFrames-1) {
+        clearInterval(play_timer);
+      }
+      // console.log("original", timing, curYear, maxYear);
+      traceTimeline(timeFrames);
+    }, timeunit);
+  } else if (play_timer != undefined) {
+    clearInterval(play_timer);
+    play_timer = undefined;
+  }
+});
+
+function pause() {
+  playon.setAttribute("aria-pressed", "false");
+  if (play_timer != undefined) {
+    clearInterval(play_timer);
+    play_timer = undefined;
+  }
+  document.getElementById("play_icon").className = "fa fa-play";
+}
+
+function getCaption(bound) {
+  // console.log("getCaption", bound)
+  var reasons = Object.keys(bound.reason);
+  if (bound.start_time != "Init")
+    reasons = [bound.prologue, ...Object.keys(bound.reason), bound.epilogue];
+  for (var i = 0; i < reasons.length; i++) {
+    var g = reasons[i];
+    if (testtimeframes.getCaption(g) == undefined) {
+      createNewCaption(bound);
+    }
+    timeline.addCaption(g, testtimeframes.getCaption(g));
+  }
+}
+
+sessionStorage.storySaved = false;
+function saveCurrentSession() {
+  console.log("[*] CurrentSession is saved");
+  sessionStorage.storySaved = true;
+  sessionStorage.story = JSON.stringify(testtimeframes);
+}
+
+function loadSavedSession() {
+  storydata = JSON.parse(sessionStorage.story);
+  testtimeframes = new TimeFrames(storydata.timeseries, storydata.gname);
+  testtimeframes.loadData(storydata);
+  refresh();
+}
+
+function createNewCaption(bound) {
+  $.ajax({
+    type: "POST",
+    url: "/get_caption/",
+    dataType: "json",
+    data: bound,
+    success: function(res){
+      // console.log("createNewCaption success", res);
+      testtimeframes.saveInnerGroupInfo(res["head"], res["tail"], res["innergrp"]);
+      for (var g in res["caption"]) {
+        testtimeframes.saveCaption(g, res["caption"][g])
+        timeline.addCaption(g, res["caption"][g]);
+      }
+    }
+  });
+}
+
+function updateCaption(id, value) {
+  testtimeframes.saveCaption(id, value);
+}
+
+function changeSelectedConts(continents) {
+  // console.log("-- changeSelectedConts", legendCount, continents, continents.indexOf(0));
+  for (var c = 0; c < legendCount; c++) {
+    swtvalues["groups"][c] = false;
+  }
+  if (continents.indexOf(0) > -1) continents = [0,1,2,3,4];
+  for (var c = 0; c < continents.length; c++) {
+    swtvalues["groups"][continents[c]] = true;
+  }
+}
+
+function traceInitSeq(gid) {
+  var names = gid.split("-");
+  var type = names[1], group = names[2];
+  var preYear = testtimeframes.getFrameContent(preFrame),
+      curYear = testtimeframes.getFrameContent(curFrame);
+  // console.log("traceInitSeq", gid, type, group, preYear, curYear)
+
+  if (preYear != curYear) {
+    // console.log("@ changeSlider -- Init", type);
+    if (type == "Y") {
+      chart.highlightYaxis(5*timeunit);
+    } else if (type == "X") {
+      chart.highlightXaxis(5*timeunit);
+    } else if (type == "S") {
+      chart.highlightSaxis(5*timeunit);
+    } else if (type == "Trend") {
+      if (o_trend) chart.highlightDirect(5*timeunit);
+      else chart.highlightInverse(5*timeunit);
+    } else if (type == "G") {
+      var minYear = timeseries[0];
+      chart.hideDesc(0);
+      chart.showGroup(minYear, group);
+      updateBackgoundYear(minYear);
+    }
+  }
+
+  preFrame = curFrame;
+}
+
+function traceTimeline(timeFrames) {
+  var curYear = timeFrames[curFrame];
+  // console.log("traceTimeline", curFrame, curYear, gid);
+  if (curFrame == testtimeframes.getTimeFrameLength()-1) {
+    curFrame -= 1;
+  }
+  var gid = testtimeframes.getFrameContent(curFrame);
+  // if init sequence
+  if (curYear == "init") {
+    changeSelectedConts([0,1,2,3,4]);
+    traceInitSeq(testtimeframes.getFrameContent(curFrame));
+  }
+
+  changeSlider();
+  updateChartTitle(gid);
+  updateCaptionPanel(testtimeframes.getCaption(gid));
+}
+
+
+var swtvalues = {
+  "groups": {0: true, 1:true, 2:true, 3:true, 4:true},
+};
+$('input[type=range]').on('input', function () {
+  $(this).trigger('change');
+  // pause();
+});
+$("input[type='range']").change(function() {
+  el = $(this);
+  curFrame = parseInt(el.val());
+  updateBackgoundYear("")
+  var gid = testtimeframes.getFrameContent(curFrame);
+  if (curFrame == testtimeframes.getTimeFrameLength()-1) {
+    curFrame -= 1;
+    gid = testtimeframes.getFrameContent(curFrame);
+  }
+  updateChartTitle(gid);
+  updateCaptionPanel(testtimeframes.getCaption(gid));
+  changeSlider();
+})
+// Fake a change to position bubble at page load
+.trigger('change');
+
+function changeSlider() {
+  var el = $("input[type='range']");
+  var length_timeFrames = testtimeframes.getTimeFrameLength();
+  var timeFrames = testtimeframes.getTimeFrames();
+  if (curFrame >= length_timeFrames) return;
+  // console.log("changeSlider", curFrame, timeFrames[curFrame], el.attr("min"), el.attr("max"), el.val())
+
+  width = el.width()-32;
+  newPoint = (curFrame-el.attr("min")) / (el.attr("max")-el.attr("min"));
+  var sliderMin = leftTimelineMargin+20;
+  var sliderMax = sliderMin+width;
+  var sliderPos = Math.max(sliderMin, Math.min(width * newPoint + leftTimelineMargin + 20, sliderMax));
+  $("#slider-extend")[0].style.left = sliderPos;
+  var preYear = timeFrames[preFrame],
+      curYear = timeFrames[curFrame];
+  el.next("output")
+    .css({
+      "marginLeft": sliderPos-leftTimelineMargin+15,
+      "marginTop": -18,
+      "font-size": 12,
+      "color": "#000"
+    })
+    .text(curYear);
+  el.val(curFrame);
+
+  var frameContent = testtimeframes.getFrameContent(curFrame);
+
+  // console.log("@@@@@@", frameContent, testtimeframes.getFrameContent(preFrame))
+  if (frameContent != testtimeframes.getFrameContent(preFrame)) chart.clear();
+  if (curYear == "init") return;
+
+  var focus;
+  if (frameContent != undefined) {
+    var names = frameContent.split("-");
+    // console.log("~~ switch to the group:", names[2])
+    if (names[2] == "p" || names[2] == "e" || names[2] == "b") {
+      focus = false;
+      changeSelectedConts([0,1,2,3,4]);
+    } else if (names[2] == 0) {
+      focus = true;
+      changeSelectedConts([0,1,2,3,4]);
+    } else {
+      focus = true;
+      changeSelectedConts([parseInt(names[2])]);
+    }
+  } else {
+    focus = false;
+    changeSelectedConts([0,1,2,3,4]);
+  }
+
+  // console.log("changeSlider", preYear, curYear, frameContent);
+  if (focus && preYear != curYear) {
+    // console.log("@ changeSlider -- FOCUS", curYear, testtimeframes.framemap[frameContent]);
+    chart.clearFocus();
+    chart.hideDesc(0);
+    var reason = testtimeframes.framemap[frameContent].reason;
+    var delaytime = testtimeframes.default_slowdown[reason]*timeunit;
+    var innergrp = testtimeframes.innergrp;
+    chart.updateFocus(curYear, swtvalues, innergrp, delaytime, frameContent);
+  } else if (preYear != curYear) {
+    // console.log("@ changeSlider -- Update", curYear);
+    chart.hideDesc(0);
+    chart.updateChart(curYear, swtvalues);
+  }
+
+  highlightCurYear(curYear);
+  updateBackgoundYear(curYear);
+  preFrame = curFrame;
+}
+
+function highlightOff() {
+  $("circle.tbubble").attr("r", 1).attr("stroke", "none");
+}
+function highlightCurYear(curYear) {
+  updateLineTimebar(curYear);
+  highlightOff();
+  for (var i = 0; i < legendCount; i++) {
+    $("circle.tbubble#"+i+"_"+curYear)
+      .attr("r", 5)
+      .attr("stroke", "black");
+  }
+}
+
+
+</script>
+</html>
