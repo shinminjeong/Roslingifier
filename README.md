@@ -35,4 +35,4 @@ and access the frontend at [http://localhost:8000/](http://localhost:8000/)
 
 ### How to Use Roslingifier
 
-[![Howtouse](https://img.youtube.com/vi/BTkwk00gU0g/0.jpg)](https://youtu.be/BTkwk00gU0g)
+[![Howtouse](https://github.com/shinminjeong/Roslingifier/blob/main/figures/Youtube_snapshot.png)](https://youtu.be/BTkwk00gU0g)
