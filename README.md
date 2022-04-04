@@ -7,7 +7,7 @@ We present Roslingifier, a data-driven storytelling method for animated scatterp
 
 ### Citation Information
 
-Minjeong Shin, Joohee Kim, Yunha Han, Lexing Xie, Mitchell Whitelaw, Bum Chul Kwon, Sungahn Ko, Niklas Elmqvist (2022). [Roslingifier: Semi-Automated Storytelling for Animated Scatterplots.](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9695173) IEEE Transactions on Visualization and Computer Graphics.
+Minjeong Shin, Joohee Kim, Yunha Han, Lexing Xie, Mitchell Whitelaw, Bum Chul Kwon, Sungahn Ko, Niklas Elmqvist. [Roslingifier: Semi-Automated Storytelling for Animated Scatterplots.](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9695173) IEEE Transactions on Visualization and Computer Graphics, 2022.
 
 
 ### Getting Started
