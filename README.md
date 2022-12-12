@@ -41,4 +41,4 @@ and access the frontend at [http://localhost:8000/](http://localhost:8000/)
 
 ### Recorded Talk
 
-[![Howtouse](https://github.com/shinminjeong/Roslingifier/blob/main/figures/Youtube_talk_image.png)](https://youtu.be/4zV2Uhxsv08)
+[![RecordedTalk](https://github.com/shinminjeong/Roslingifier/blob/main/figures/Youtube_talk_image.png)](https://youtu.be/4zV2Uhxsv08)
